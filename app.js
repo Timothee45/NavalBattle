@@ -30,16 +30,6 @@ var currentPlayer = "";
 
 var isTest = true;
 
-function ParcourirGrille(user) {
-	for (var i=0; i<maxSize; i++) {
-		for (var j=0; j<maxSize; j++) {
-			if (gameData[user]["boats"][i][j] != 0) {
-console.log("Boat " + (i + 1) + "-" + (j + 1))
-			}
-		}
-	}
-}
-
 // Quand un client se connecte, on le note dans la console
 io.sockets.on('connection', function (socket) {
     socket.on('auth', function(message) {
@@ -84,21 +74,81 @@ io.sockets.on('connection', function (socket) {
     	}
     });
 
+    function ParcBoat(x, y, boatsCoords, boatArray, sens) {
+    	if (sens == "horizon") {
+    		x = parseInt(x) + 1;
+    	} else {
+			y = parseInt(y) + 1;
+    	}
+    	var newCoord = y + "-" + x;
+    	if (boatsCoords.includes(newCoord)) {
+    		boatArray.push(newCoord);
+    		ParcBoat(x, y, boatsCoords, boatArray, sens);
+    	}
+
+    	return boatArray;
+    }
+
+	function GetBoats(boatsCoords) {
+		var nbrCoords = boatsCoords.length
+		var currentCoord;
+		var boatLength;
+		var result = true;
+
+		for (var i=0; i<nbrCoords; i++) {
+			currentCoord = boatsCoords[i].split("-");
+			var boatArray = {"horizontal": [], "vertical": [], }
+
+			boatArray["horizontal"] = ParcBoat(currentCoord[1], currentCoord[0], boatsCoords, [boatsCoords[i]], "horizon");
+			boatArray["vertical"] = ParcBoat(currentCoord[1], currentCoord[0], boatsCoords, [boatsCoords[i]], "verti");
+
+			if (boatArray["horizontal"].length != 1 && boatArray["vertical"].length != 1) {
+				result = false;
+				break;
+			} else {
+				var finalBoatArray = boatArray["horizontal"].length != 1 ? boatArray["horizontal"] : boatArray["vertical"];
+
+				boatsCoords = boatsCoords.filter(function(item) {
+					return !(finalBoatArray.includes(item));
+				});
+
+				var dataBoat = {
+					"coords": finalBoatArray,
+					"size": finalBoatArray.length,
+					"touches": 0,
+				}
+
+				gameData[socket.pseudo]["boats"].push(dataBoat);
+
+				i = i - 1;
+				nbrCoords = boatsCoords.length;
+			}
+		}
+
+		return result;
+	}
+
 	socket.on('defend', function (message) {
 		if (message.length == maxPoints || isTest) {
-console.log(message)
 			message.forEach(function(element) {
 				boatCoordinates = element.split("-");
 
 				placeBoat(boatCoordinates[0], boatCoordinates[1]);
 			});
 
-			ParcourirGrille(socket.pseudo);
+			var done = GetBoats(message);
 
-			socket.emit('my-defend', {
-				"status": "ok",
-				"message": "Importation réussie.",
-				"data": message,});
+			if (!done) {
+				socket.emit('my-defend', {
+					"status": "ko",
+					"message": "Les bateaux ne peuvent pas être collés",
+					"data": message,});
+			} else {
+				socket.emit('my-defend', {
+					"status": "ok",
+					"message": "Importation réussie.",
+					"data": message,});
+			}
 		} else {
 			socket.emit('my-defend', {
 				"status": "ko",
@@ -109,7 +159,7 @@ console.log(message)
 
 	socket.on('launches', function (message) {
 		var nbrTouches = 0;
-		var dataReturn = new Object();
+		var dataReturn = {"shots": {}, "boatsSinked": [], "currentPlayer": ""};
 		var bonus = 0;
 
 		if (socket.pseudo == currentPlayer) {
@@ -119,10 +169,10 @@ console.log(message)
 
 					bonus = fireToCoord(launchCoordinates[0], launchCoordinates[1]);
 					nbrTouches += bonus;
-					dataReturn[element] = false;
+					dataReturn["shots"][element] = false;
 
 					if (bonus != 0) {
-						dataReturn[element] = true;
+						dataReturn["shots"][element] = true;
 					}
 				});
 
@@ -130,16 +180,16 @@ console.log(message)
 
 				nextPlayer();
 
+				dataReturn["currentPlayer"] = currentPlayer;
+
 				socket.broadcast.emit('launches', {
 					"status": "ok",
 					"message": "Vous avez été touché " + nbrTouches + " fois.",
-					"data": dataReturn,
-					"currentPlayer": currentPlayer,});
+					"data": dataReturn,});
 				socket.emit('my-launches', {
 					"status": "ok",
 					"message": "Vous avez fait " + nbrTouches + " touches.",
-					"data": dataReturn,
-					"currentPlayer": currentPlayer,});
+					"data": dataReturn,});
 				SendScores();
 			} else {
 				socket.emit('my-launches', {
@@ -173,7 +223,7 @@ console.log(message)
 	}
 
 	function placeBoat(x, y) {
-		gameData[socket.pseudo]["boats"][x - 1][y - 1] = 1;
+		gameData[socket.pseudo]["boatsGrid"][x - 1][y - 1] = 1;
 	}
 
 	function fireToCoord(x, y) {
@@ -181,7 +231,7 @@ console.log(message)
 		yourData["launches"][x - 1][y - 1] = 1;
 		var touche = 0;
 
-		target = gameData[yourData["opponent"]]["boats"][x - 1][y - 1];
+		target = gameData[yourData["opponent"]]["boatsGrid"][x - 1][y - 1];
 		if (target == 1) {
 			touche = 1;
 		}
@@ -195,6 +245,7 @@ console.log(message)
 function addData() {
 	var myData = {
 		"launches": [],
+		"boatsGrid": [],
 		"boats": [],
 		"points": 0,
 		"num": 0,
@@ -203,7 +254,7 @@ function addData() {
 
 	for (var i=1; i<=maxSize; i++ ) {
 		myData["launches"].push(Array(maxSize).fill(0));
-		myData["boats"].push(Array(maxSize).fill(0));
+		myData["boatsGrid"].push(Array(maxSize).fill(0));
 	}
 
 	return myData;

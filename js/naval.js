@@ -86,21 +86,23 @@ $("#launch").click(function() {
 });
 
 socket.on('launches', function(message) {
-    for (var key in message["data"]) {
-        displayLaunch($("#defense_table"), key, message["data"][key]);
-
-        DisplayMessage("Tour de " + message["currentPlayer"] + " !!");
+    for (var key in message["data"]["shots"]) {
+        displayLaunch($("#defense_table"), key, message["data"]["shots"][key]);
     }
+
+    DisplayMessage("Tour de " + message["data"]["currentPlayer"] + " !!!");
 });
 
 socket.on('my-launches', function(message) {
+console.log(message)
+
     if (message["status"] == "ko") {
         DisplayError(message["message"]);
     } else {
         DisplayMessage(message["message"]);
 
-        for (var key in message["data"]) {
-            displayLaunch($("#launch_table"), key, message["data"][key]);
+        for (var key in message["data"]["shots"]) {
+            displayLaunch($("#launch_table"), key, message["data"]["shots"][key]);
         }
     }
 });
