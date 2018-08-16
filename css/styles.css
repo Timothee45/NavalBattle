@@ -65,6 +65,10 @@ body{
   color: red;
 }
 
+.boat-sinked {
+  background-color: black;
+}
+
 .game-button {
   width: 100px;
   margin-left: 50px;

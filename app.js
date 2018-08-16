@@ -161,6 +161,7 @@ io.sockets.on('connection', function (socket) {
 		var nbrTouches = 0;
 		var dataReturn = {"shots": {}, "boatsSinked": [], "currentPlayer": ""};
 		var bonus = 0;
+		var sinkedBoat;
 
 		if (socket.pseudo == currentPlayer) {
 			if (message.length == maxLaunches || isTest) {
@@ -168,8 +169,13 @@ io.sockets.on('connection', function (socket) {
 					launchCoordinates = element.split("-");
 
 					bonus = fireToCoord(launchCoordinates[0], launchCoordinates[1]);
+					sinkedBoat = checkBoatHits(launchCoordinates[0], launchCoordinates[1]);
 					nbrTouches += bonus;
 					dataReturn["shots"][element] = false;
+
+					if (sinkedBoat.length != 0) {
+						dataReturn["boatsSinked"].push(sinkedBoat);
+					}
 
 					if (bonus != 0) {
 						dataReturn["shots"][element] = true;
@@ -227,7 +233,7 @@ io.sockets.on('connection', function (socket) {
 	}
 
 	function fireToCoord(x, y) {
-		yourData = gameData[socket.pseudo]
+		var yourData = gameData[socket.pseudo];
 		yourData["launches"][x - 1][y - 1] = 1;
 		var touche = 0;
 
@@ -239,6 +245,26 @@ io.sockets.on('connection', function (socket) {
 		target = -1;
 
 		return touche;
+	}
+
+	function checkBoatHits(x, y) {
+		var yourData = gameData[socket.pseudo];
+		var returnData = [];
+
+		for (var num in gameData[yourData["opponent"]]["boats"]) {
+			var boat = gameData[yourData["opponent"]]["boats"][num];
+
+			if (boat["coords"].includes(x + "-" + y)) {
+				boat["touches"]++;
+
+				if (boat["touches"] == boat["size"]) {
+					returnData = boat["coords"];
+				}
+				break;
+			}
+		}
+
+		return returnData;
 	}
 });
 

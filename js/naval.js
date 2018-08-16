@@ -2,7 +2,7 @@ var size = 10;
 var defendCases;
 var launchCases;
 var pseudo = "";
-var gameHost = "192.168.192.148";
+var gameHost = "localhost";
 
 var socket = io.connect('http://' + gameHost + ':8080');
 var colors = ["red", "black", "green", "blue", "yellow", "orange", "teal", "white", "seagreen", "pink"];
@@ -94,18 +94,37 @@ socket.on('launches', function(message) {
 });
 
 socket.on('my-launches', function(message) {
-console.log(message)
-
     if (message["status"] == "ko") {
         DisplayError(message["message"]);
     } else {
-        DisplayMessage(message["message"]);
+        var messageExtension = "";
 
         for (var key in message["data"]["shots"]) {
             displayLaunch($("#launch_table"), key, message["data"]["shots"][key]);
         }
+
+        var sinkedBoats = message["data"]["boatsSinked"];
+
+        if (sinkedBoats.length != 0) {
+            messageExtension = " " + sinkedBoats.length + " bateau coulé.";
+            
+
+            for (var num in sinkedBoats) {
+                displaySinkedBoats($("#launch_table"), sinkedBoats[num]);
+            }
+        }
+
+        DisplayMessage(message["message"] + messageExtension);
     }
 });
+
+function displaySinkedBoats(perimeter, coordsTable) {
+    for (var num in coordsTable) {
+        perimeter.find("." + coordsTable[num]).each(function() {
+            $(this).removeClass("case-fired").addClass("boat-sinked");
+        });
+    }
+}
 
 function displayLaunch(perimeter, coords, isTouched) {
     perimeter.find("." + coords).each(function() {
