@@ -1,0 +1,46 @@
+body{
+  margin: 0px;
+}
+
+.hidden { 
+  display: none; 
+}
+
+.table-title {
+  font-size: 22px;`
+  color: blue;
+  font-weight: bold;
+}
+
+.nav-table { border: solid 1px black;             
+  border-collapse: collapse;
+}
+
+.table-cell { 
+  border: solid 1px black;
+  height: 30px;
+  width: 30px;
+  text-align: center;
+  font-weight: bold;
+}
+
+.btn_game {
+  height: 30px;
+  width: 30px;
+}
+
+.btn_selected {
+  background-color: red;
+}
+
+.case-fired {
+  background-color: yellow;
+}
+
+.case-defend {
+  background-color: grey;
+}
+
+.is-touched {
+  color: red;
+}
