@@ -27,8 +27,8 @@ var maxPoints = 17;
 var maxLaunches = 3;
 var currentPlayerNum = 0;
 var currentPlayer = "";
-
-var isTest = true;
+var boatConf = {5: 1, 4: 1, 3: 2, 2: 1};
+var isTest = false;
 
 // Quand un client se connecte, on le note dans la console
 io.sockets.on('connection', function (socket) {
@@ -94,6 +94,7 @@ io.sockets.on('connection', function (socket) {
 		var currentCoord;
 		var boatLength;
 		var result = true;
+		var boatsEnnum = {};
 
 		for (var i=0; i<nbrCoords; i++) {
 			currentCoord = boatsCoords[i].split("-");
@@ -112,9 +113,17 @@ io.sockets.on('connection', function (socket) {
 					return !(finalBoatArray.includes(item));
 				});
 
+				var boatSize = finalBoatArray.length;
+
+				if (boatSize in boatsEnnum) {
+					boatsEnnum[boatSize]++;
+				} else {
+					boatsEnnum[boatSize] = 1;
+				}
+
 				var dataBoat = {
 					"coords": finalBoatArray,
-					"size": finalBoatArray.length,
+					"size": boatSize,
 					"touches": 0,
 				}
 
@@ -125,7 +134,31 @@ io.sockets.on('connection', function (socket) {
 			}
 		}
 
+		if (!BoatConfigRespected(boatsEnnum)) {
+			result = false;
+		}
+
 		return result;
+	}
+
+	function BoatConfigRespected(boatsEnnum) {
+		var resultBoat = true;
+
+		if (Object.keys(boatConf).length != Object.keys(boatsEnnum).length) {
+			resultBoat = false;
+		}
+
+		if (resultBoat) {
+			for (var key in boatConf) {
+				if (key in boatsEnnum && boatConf[key] == boatsEnnum[key]) {
+				} else {
+					resultBoat = false;
+					break;
+				}
+			}
+		}
+
+		return resultBoat;
 	}
 
 	socket.on('defend', function (message) {
@@ -141,7 +174,7 @@ io.sockets.on('connection', function (socket) {
 			if (!done) {
 				socket.emit('my-defend', {
 					"status": "ko",
-					"message": "Les bateaux ne peuvent pas être collés",
+					"message": "Erreur dans le placement des bateaux ou dans leur nombres. Les bateaux ne peuvent pas êtres collés.",
 					"data": message,});
 			} else {
 				socket.emit('my-defend', {
