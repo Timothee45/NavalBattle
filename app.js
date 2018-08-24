@@ -169,7 +169,7 @@ io.sockets.on('connection', function (socket) {
 		return resultBoat;
 	}
 
-	socket.on('defend', function (message) {
+	socket.on('defend', function(message) {
 		if (message.length == maxPoints || isTest) {
 			message.forEach(function(element) {
 				boatCoordinates = element.split("-");
@@ -215,7 +215,7 @@ io.sockets.on('connection', function (socket) {
 		}
 	});
 
-	socket.on('launches', function (message) {
+	socket.on('launches', function(message) {
 		var nbrTouches = 0;
 		var dataReturn = {"shots": {}, "boatsSinked": [], "currentPlayer": ""};
 		var bonus = 0;
@@ -274,6 +274,11 @@ io.sockets.on('connection', function (socket) {
 				"message": "Ce n'est pas encore votre tour!!",
 				"data": dataReturn,});
 		}
+	});
+
+	socket.on('chat', function(message) {
+		socket.broadcast.emit('chat', message);
+		socket.emit('chat', message);
 	});
 
 	function SendScores() {

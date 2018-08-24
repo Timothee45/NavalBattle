@@ -111,3 +111,29 @@ body{
 #config {
   margin-left: 20px;
 }
+
+#chat {
+  position: absolute; 
+  display: inline-block;
+  margin-left: 50px;
+  width: 300px;
+  height: 600px;
+  padding: 10px;
+  border: 1px solid grey;
+  overflow: scroll; 
+}
+
+#chat-container {
+  width: 100%;
+  height: 100%;
+}
+
+.message-chat {
+  height: auto;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  width: 100%;
+  background-color: lightgrey;
+  border-radius: 2px;
+  padding: 3px;
+}

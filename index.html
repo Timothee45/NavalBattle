@@ -7,36 +7,52 @@
     </head>
  
     <body>
-        <div>
-            <div class="head-container">
-                <h1>Bataille Navale :</h1>
-                <h3 id="pseudo_title"></h3>
+        <div style="display: inline-block;">
+            <div>
+                <div class="head-container">
+                    <h1>Bataille Navale :</h1>
+                    <h3 id="pseudo_title"></h3>
+                </div>
+
+                <div class="head-container" style="margin-left: 200px;">
+                    <h2>Scores : </h2>
+                    <table id="scores-game" class="scores-game nav-table"></table>
+                </div>
             </div>
 
-            <div class="head-container" style="margin-left: 200px;">
-                <h2>Scores : </h2>
-                <table id="scores-game" class="scores-game nav-table"></table>
+            <div id="message_game"></div>
+
+            <div>
+                <div class="head-container">
+                    <div class="table-title">Vos bateaux : </div>
+                    <table id="defense_table" class="nav-table"></table>
+                    <input type="submit" name="defend" id="defend" value="DEFEND" class="game-button" style="position: absolute;">
+                </div>
+
+                <div class="head-container" id="config">
+                    <div class="table-title">La configuration des bateaux : </div>
+                </div>
             </div>
+
+            <div style="margin-top: 30px;" class="table-title">Vos tirs : </div>
+            <table id="launch_table" class="nav-table"></table>
+            <input type="button" name="launch" id="launch" value="LAUNCH" class="game-button">
         </div>
 
-        <div id="message_game"></div>
-
-        <div>
-            <div class="head-container">
-                <div class="table-title">Vos bateaux : </div>
-                <table id="defense_table" class="nav-table"></table>
-                <input type="button" name="defend" id="defend" value="DEFEND" class="game-button" style="position: absolute;">
+        <div id="chat">
+            <div class="message-chat">
+                <form action="/" method="post" id="form-message">
+                    <div style="width: 100%;">
+                    <input type="text" name="message-content" id="message-content" placeholder="Votre message...." style="width: 100%; margin: auto;">
+                    </div>
+                    <div style="width: 100%;">
+                        <input type="submit" name="message-button" id="message-button" value="send" style="margin: auto;">
+                    </div>
+                </fom>
             </div>
-
-            <div class="head-container" id="config">
-                <div class="table-title">La configuration des bateaux : </div>
+            <div id="chat-container">
             </div>
         </div>
-
-        <div style="margin-top: 30px;" class="table-title">Vos tirs : </div>
-        <table id="launch_table" class="nav-table"></table>
-        <input type="button" name="launch" id="launch" value="LAUNCH" class="game-button">
-
         <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
         <script src="/socket.io/socket.io.js"></script>
         <script src="/js/naval.js"></script>

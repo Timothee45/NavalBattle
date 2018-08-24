@@ -35,26 +35,6 @@ socket.on('my-auth', function(message) {
     }
 });
 
-function DisplayConfig(config) {
-console.log(config)
-    var myString = "";
-    for (var key in config["boatConf"]) {
-        for(var j=1; j<=config["boatConf"][key]; j++ ) {
-            myString += '<div class="conf-table"><table class="nav-table"><tbody><tr>';
-
-            for (var i=1; i<=key; i++) {
-                myString += '<td class="table-cell case-defend"></td>';
-            }
-
-            myString += '</tr></tbody></table></div>';
-        }
-    }
-
-    myString += '<div class="table-title" style="position: absolute;">Nombre de tirs par tours : ' + config['nbrLaunches'] + '</div>';
-
-    $("#config").append(myString);
-}
-
 socket.on('info-player', function(message) {
     if (message["status"] == "ok") {
         DisplayMessage(message["message"])
@@ -64,6 +44,30 @@ socket.on('info-player', function(message) {
 function AskAuth(message) {
     pseudo = prompt("What is your pseudo?" + "\n" + message);
     socket.emit('auth', pseudo);
+}
+
+$("#form-message").submit(function () {
+    var messageChat = $("#message-content").val();
+
+    if (messageChat.length != 0) {
+        data = {
+            "pseudo": pseudo,
+            "message": messageChat,
+        }
+
+        socket.emit('chat', data);
+        $("#message-content").val("");
+    }
+
+    return false;
+});
+
+socket.on('chat', function(message) {
+    addChatMessage(message["pseudo"], message["message"]);
+});
+
+function addChatMessage(pseudo, message) {
+    $("#chat-container").prepend("<div class='message-chat'><div style='font-weight: bold;'>" + pseudo + "</div><div>" + message + "</div></div>");
 }
 
 $("#defend").click(function() {
@@ -227,6 +231,26 @@ function FillLine(row) {
         line += "<td class='table-cell " + row + "-" + j + "'>" + "<input type='button' value='*' class='btn_game' data-row='" + row + "' data-col='" + j + "'/>" + "</td>";
     }
     return line;
+}
+
+function DisplayConfig(config) {
+    var myString = "";
+    for (var key in config["boatConf"]) {
+        for(var j=1; j<=config["boatConf"][key]; j++ ) {
+
+            myString += '<div class="conf-table"><table class="nav-table"><tbody><tr>';
+
+            for (var i=1; i<=key; i++) {
+                myString += '<td class="table-cell case-defend"></td>';
+            }
+
+            myString += '</tr></tbody></table></div>';
+        }
+    }
+
+    myString += '<div class="table-title" style="position: absolute;">Nombre de tirs par tours : ' + config['nbrLaunches'] + '</div>';
+
+    $("#config").append(myString);
 }
 
 function DisplayError(error) {
