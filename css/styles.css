@@ -2,7 +2,7 @@ body{
   padding: 20px;
 }
 
-.hidden { 
+.hidden {
   display: none; 
 }
 
@@ -10,12 +10,12 @@ body{
   display: inline-block;
 }
 
-.nav-table { 
+.nav-table {
   border: solid 1px black;             
   border-collapse: collapse;
 }
 
-.table-cell { 
+.table-cell {
   border: solid 1px black;
   height: 30px;
   width: 30px;
@@ -23,7 +23,7 @@ body{
   font-weight: bold;
 }
 
-.table-score-cell { 
+.table-score-cell {
   border: solid 1px black;
   font-weight: bold;
   height: 23px;
@@ -69,6 +69,10 @@ body{
   background-color: black;
 }
 
+.boat-alive {
+  background-color: lightgray;
+}
+
 .game-button {
   width: 100px;
   margin-left: 50px;
@@ -97,4 +101,13 @@ body{
 .scores-game {
   font-size: 20px;
   font-weight: bold;
+}
+
+.conf-table {
+  margin-bottom: 10px;
+  margin-top: 10px;
+}
+
+#config {
+  margin-left: 20px;
 }

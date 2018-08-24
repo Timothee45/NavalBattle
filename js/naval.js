@@ -2,10 +2,11 @@ var size = 10;
 var defendCases;
 var launchCases;
 var pseudo = "";
-var gameHost = "localhost";
+// comande ifconfig | grep 192.168
+var gameHost = "192.168.192.152";
 
 var socket = io.connect('http://' + gameHost + ':8080');
-var colors = ["red", "black", "green", "blue", "yellow", "orange", "teal", "white", "seagreen", "pink"];
+var colors = ["red", "black", "green", "blue", "yellow", "chartreuse", "orange", "blueviolet", "brown", "teal", "aqua", "seagreen", "pink", "aquamarine"];
 
 AskAuth("");
 
@@ -28,7 +29,35 @@ socket.on('my-auth', function(message) {
     } else {
         $("#pseudo_title").text("Bonjour " + pseudo);
         document.title = "Amiral " + pseudo;
-        ClearMessage();
+        DisplayMessage(message["message"]);
+
+        DisplayConfig(message["data"]["config"])
+    }
+});
+
+function DisplayConfig(config) {
+console.log(config)
+    var myString = "";
+    for (var key in config["boatConf"]) {
+        for(var j=1; j<=config["boatConf"][key]; j++ ) {
+            myString += '<div class="conf-table"><table class="nav-table"><tbody><tr>';
+
+            for (var i=1; i<=key; i++) {
+                myString += '<td class="table-cell case-defend"></td>';
+            }
+
+            myString += '</tr></tbody></table></div>';
+        }
+    }
+
+    myString += '<div class="table-title" style="position: absolute;">Nombre de tirs par tours : ' + config['nbrLaunches'] + '</div>';
+
+    $("#config").append(myString);
+}
+
+socket.on('info-player', function(message) {
+    if (message["status"] == "ok") {
+        DisplayMessage(message["message"])
     }
 });
 
@@ -73,6 +102,12 @@ socket.on('my-defend', function(message) {
     }
 });
 
+socket.on('game-start', function(message) {
+    if (message["status"] == "ok") {
+        DisplayMessage(message["message"]);
+    }
+});
+
 $("#launch").click(function() {
     ClearMessage();
     launchCases = [];
@@ -108,7 +143,6 @@ socket.on('my-launches', function(message) {
         if (sinkedBoats.length != 0) {
             messageExtension = " " + sinkedBoats.length + " bateau coulé.";
             
-
             for (var num in sinkedBoats) {
                 displaySinkedBoats($("#launch_table"), sinkedBoats[num]);
             }
@@ -156,6 +190,16 @@ socket.on('scores', function(message) {
         $("#launch").remove();
 
         EndGame();
+
+        if (pseudo != message["winner"]) {
+            message["boatsList"].forEach(function(element) {
+                $("#launch_table").find("." + element).each(function() {
+                    if (!($(this).hasClass("is-touched") || $(this).hasClass("case-fired"))) {
+                        $(this).addClass("boat-alive");
+                    }
+                });
+            });
+        }
     }
 });
 
@@ -216,9 +260,13 @@ function DestroyGame() {
 }
 
 function EndGame() {
+    $(".btn_game").each(function() {
+        $(this).remove();
+    });
+
     setInterval(function() {
         $("#message_game").css('color', colors[getRandomInt(colors.length)]);
-    }, 350);
+    }, 300);
 }
 
 function getRandomInt(max) {

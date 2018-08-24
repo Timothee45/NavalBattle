@@ -42,6 +42,7 @@ io.sockets.on('connection', function (socket) {
 			} else {
 		    	if (playerArray.length < 2) {
 			    	socket.pseudo = message;
+			    	var returnedData = {"pseudo": message, "config": {"nbrLaunches": maxLaunches, "boatConf": boatConf}}
 
 			    	playerArray.push(message);
 
@@ -57,8 +58,15 @@ io.sockets.on('connection', function (socket) {
 
 		    		socket.emit('my-auth', {
 						"status": "ok",
-						"message": "",
-						"data": message,});
+						"message": "Veuillez placer vos bateaux.",
+						"data": returnedData,});
+
+		    		socket.broadcast.emit('info-player', {
+						"status": "ok",
+						"message": "Un autre joueur est connecté.",
+						"data": returnedData,});
+
+		    		SendScores()
 			    } else {
 		    		socket.emit('my-auth', {
 						"status": "ko",
@@ -172,17 +180,34 @@ io.sockets.on('connection', function (socket) {
 			var done = GetBoats(message);
 
 			if (!done) {
+				ResetGameData()
 				socket.emit('my-defend', {
 					"status": "ko",
 					"message": "Erreur dans le placement des bateaux ou dans leur nombres. Les bateaux ne peuvent pas êtres collés.",
 					"data": message,});
 			} else {
+				gameData[socket.pseudo]["defenseDone"] = true;
+				gameData[socket.pseudo]["boatsList"] = message;
+
 				socket.emit('my-defend', {
 					"status": "ok",
 					"message": "Importation réussie.",
 					"data": message,});
+
+				if (playersReady()) {
+					socket.emit('game-start', {
+						"status": "ok",
+						"message": "Tour de " + currentPlayer,
+						"data": [],});
+
+					socket.broadcast.emit('game-start', {
+						"status": "ok",
+						"message": "Tour de " + currentPlayer,
+						"data": [],});
+				}
 			}
 		} else {
+			ResetGameData()
 			socket.emit('my-defend', {
 				"status": "ko",
 				"message": "Pas assez de bateaux!!!",
@@ -197,43 +222,50 @@ io.sockets.on('connection', function (socket) {
 		var sinkedBoat;
 
 		if (socket.pseudo == currentPlayer) {
-			if (message.length == maxLaunches || isTest) {
-				message.forEach( function(element) {
-					launchCoordinates = element.split("-");
+			if (playersReady()) {
+				if (message.length == maxLaunches || isTest) {
+					message.forEach( function(element) {
+						launchCoordinates = element.split("-");
 
-					bonus = fireToCoord(launchCoordinates[0], launchCoordinates[1]);
-					sinkedBoat = checkBoatHits(launchCoordinates[0], launchCoordinates[1]);
-					nbrTouches += bonus;
-					dataReturn["shots"][element] = false;
+						bonus = fireToCoord(launchCoordinates[0], launchCoordinates[1]);
+						sinkedBoat = checkBoatHits(launchCoordinates[0], launchCoordinates[1]);
+						nbrTouches += bonus;
+						dataReturn["shots"][element] = false;
 
-					if (sinkedBoat.length != 0) {
-						dataReturn["boatsSinked"].push(sinkedBoat);
-					}
+						if (sinkedBoat.length != 0) {
+							dataReturn["boatsSinked"].push(sinkedBoat);
+						}
 
-					if (bonus != 0) {
-						dataReturn["shots"][element] = true;
-					}
-				});
+						if (bonus != 0) {
+							dataReturn["shots"][element] = true;
+						}
+					});
 
-				gameData[socket.pseudo]["points"] += nbrTouches;
+					gameData[socket.pseudo]["points"] += nbrTouches;
 
-				nextPlayer();
+					nextPlayer();
 
-				dataReturn["currentPlayer"] = currentPlayer;
+					dataReturn["currentPlayer"] = currentPlayer;
 
-				socket.broadcast.emit('launches', {
-					"status": "ok",
-					"message": "Vous avez été touché " + nbrTouches + " fois.",
-					"data": dataReturn,});
-				socket.emit('my-launches', {
-					"status": "ok",
-					"message": "Vous avez fait " + nbrTouches + " touches.",
-					"data": dataReturn,});
-				SendScores();
+					socket.broadcast.emit('launches', {
+						"status": "ok",
+						"message": "Vous avez été touché " + nbrTouches + " fois.",
+						"data": dataReturn,});
+					socket.emit('my-launches', {
+						"status": "ok",
+						"message": "Vous avez fait " + nbrTouches + " touches.",
+						"data": dataReturn,});
+					SendScores();
+				} else {
+					socket.emit('my-launches', {
+						"status": "ko",
+						"message": "Vous ne pouvez tirer que " + maxLaunches + " fois.",
+						"data": dataReturn,});
+				}
 			} else {
 				socket.emit('my-launches', {
 					"status": "ko",
-					"message": "Vous ne pouvez tirer que " + maxLaunches + " fois.",
+					"message": "Tout les joueurs ne sont pas prêts!!",
 					"data": dataReturn,});
 			}
 		} else {
@@ -254,11 +286,30 @@ io.sockets.on('connection', function (socket) {
 
 			if (currentPoints == maxPoints) {
 				returnedData["winner"] = socket.pseudo;
+				returnedData["boatsList"] = gameData[socket.pseudo]["boatsList"];
 			}
 		}
 
 		socket.broadcast.emit('scores', returnedData);
 		socket.emit('scores', returnedData);
+	}
+
+	function playersReady() {
+		var isReady = true;
+		var arraySize = 0;
+
+		for (var key in gameData) {
+			arraySize++;
+			if (!gameData[key]["defenseDone"]) {
+				isReady = false;
+			}
+		}
+
+		if (arraySize != 2) {
+			isReady = false;
+		}
+
+		return isReady;
 	}
 
 	function placeBoat(x, y) {
@@ -299,16 +350,25 @@ io.sockets.on('connection', function (socket) {
 
 		return returnData;
 	}
+
+	function ResetGameData() {
+		var opponent = gameData[socket.pseudo]["opponent"];
+		gameData[socket.pseudo] = addData();
+
+		gameData[socket.pseudo]["opponent"] = opponent;
+	}
 });
 
 function addData() {
 	var myData = {
 		"launches": [],
 		"boatsGrid": [],
+		"boatsList": [],
 		"boats": [],
 		"points": 0,
 		"num": 0,
 		"opponent": "",
+		"defenseDone": false,
 	}
 
 	for (var i=1; i<=maxSize; i++ ) {
